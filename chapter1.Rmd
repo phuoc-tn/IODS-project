@@ -27,7 +27,7 @@ My doctoral school informed me in an email.
 
 ***How did it work as a "crash course" on modern R tools and using RStudio?***
 
-Quite intensive if you start the day before the dead line (the "welcome to this course" email was sent a quite late).
+Quite intensive.
 
 ***Which were your favorite topics?***
 
