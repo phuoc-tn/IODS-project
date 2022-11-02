@@ -1,5 +1,5 @@
 ---
-title: "IODS course project"
+title: "**IODS course project**"
 author: "Phuoc Truong Nguyen"
 output:
   html_document:
@@ -10,10 +10,19 @@ output:
     fig_width: 6
     fig_height: 4
 ---
+<style type="text/css">
+h1.title {
+  font-size: 40px;
+}
+h4.author {
+  font-size: 25px;
+  color: DarkRed;
+}
+</style>
 
 ***
 
-# Introduction to Open Data Science - Course Project
+# **Chapter 1 - Introduction to Open Data Science - Course Project**
 
 ```{r child = "chapter1.Rmd"}
 # This will include Chapter 1 (that is updated in its own file) in the document.

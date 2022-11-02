@@ -1,43 +1,38 @@
 
-# About the project
+## **About the project**
 
-*Write a short description about the course and add a link to your GitHub repository here. This is an R Markdown (.Rmd) file so you should use R Markdown syntax.*
-
+***Write a short description about the course and add a link to your GitHub repository here. This is an R Markdown (.Rmd) file so you should use R Markdown syntax.***  
+   There aim of the course is to teach how to use R, RStudio and GitHub as well as how to do statistical analyses with R.  
+   GitHub repository: <https://github.com/phuoc-tn/IODS-project>
+<br/>
+<br/>
 ```{r}
 # This is a so-called "R chunk" where you can write R code.
 
 date()
+paste("Today I stepped on", sample(1:100, size = 1, replace = FALSE), "LEGO brick(s).")
 
 ```
-~~The text continues here.~~
 
-GitHub repository: <https://github.com/phuoc-tn/IODS-project>
+<br/>
+***How are you feeling right now?***  
+   Quite tired.
 
-***How are you feeling right now?***
+***What do you expect to learn?***  
+   How/when/why to do certain statistical analyses. Maybe new tricks to use in R.
 
-Quite **tired**.
+***Where did you hear about the course?***  
+   My doctoral school informed me in an email.
 
-***What do you expect to learn?***
+***How did it work as a "crash course" on modern R tools and using RStudio?***  
+   Quite intensive.
 
-How/when/why to do certain statistical analyses. Maybe new tricks to use in R.
+***Which were your favorite topics?***  
+   Data parsing, using partial matches to find columns.
 
-***Where did you hear about the course?***
+***Which topics were most difficult?***  
+   Transposing data frames.
 
-My doctoral school informed me in an email.
-
-***How did it work as a "crash course" on modern R tools and using RStudio?***
-
-Quite intensive.
-
-***Which were your favorite topics?***
-
-Data parsing, using partial matches to find columns.
-
-***Which topics were most difficult?***
-
-Transposing data frames.
-
-***Some other comments on the book and our new approach of getting started with R Markdown etc.?***
-
-The online book is a great resource! I will definitely bookmark it for future use.
+***Some other comments on the book and our new approach of getting started with R Markdown etc.?***  
+   The online book is a great resource! I will definitely bookmark it for future use.
 
