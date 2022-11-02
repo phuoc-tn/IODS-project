@@ -25,7 +25,7 @@ How/when/why to do certain statistical analyses. Maybe new tricks to use in R.
 
 My doctoral school informed me in an email.
 
-***How did it work as a "crash course" on modern R tools and using RStudio?***
+*How did it work as a "crash course" on modern R tools and using RStudio?*
 
 Quite intensive.
 
