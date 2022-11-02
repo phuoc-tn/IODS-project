@@ -1,5 +1,6 @@
 ---
 title: "IODS course project"
+author: "Phuoc Truong Nguyen"
 output:
   html_document:
     theme: cosmo
