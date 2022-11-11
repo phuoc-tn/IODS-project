@@ -1,6 +1,6 @@
-# Insert chapter 2 title here
+# **Chapter 2: Regression and model validation**
 
-*Describe the work you have done this week and summarize your learning.*
+***Describe the work you have done this week and summarize your learning.***
 
 - Describe your work and results clearly. 
 - Assume the reader has an introductory course level understanding of writing and reading R code as well as statistical methods.
@@ -10,4 +10,96 @@
 date()
 ```
 
-Here we go again...
+## **Analysis**
+
+### **Task 1.**
+***Explore the structure and the dimensions of the data and describe the dataset briefly, assuming the reader has no previous knowledge of it.***
+
+**1) Load tidyverse.**
+```{r, message = FALSE}
+library(tidyverse)
+```
+
+**2) Import data from CSV file created in data wrangling.**
+```{r, message = FALSE}
+learning2014 <- read_csv(file = "Data/learning2014.csv", col_names = TRUE)
+```
+
+**3) Check structure and dimensions of data.**
+```{r}
+str(learning2014)
+dim(learning2014)
+```
+
+   **Answer:** It's nice.
+
+### **Task 2.**
+***Show a graphical overview of the data and show summaries of the variables in the data. Describe and interpret the outputs, commenting on the distributions of the variables and the relationships between them.***
+
+**1.1) Use pairs() to visualize data.**
+```{r, fig.height = 6, fig.width = 8, fig.align = "center"}
+pairs(learning2014[-1],
+      col = c("red", "blue")[factor(learning2014$gender)], # Use gender as group for colors.
+      oma = c(2, 2, 2, 10)) # Set the margins outside of plot.
+par(xpd = TRUE) # Allow legend to be outside of plot area.
+legend(0.95, 0.6, # Coordinates for legend.
+       legend = unique(learning2014$gender),
+       fill = c("red", "blue"))
+```
+
+Getting colors and legend with pairs() was harder than expected. Maybe too hard...
+
+**1.2) Or use ggplot2 and GGally to visualize data.**
+```{r, message = FALSE, fig.height = 7, fig.width = 9.5, fig.align = "center"}
+library(GGally) # ggplot2 is part of tidyverse, so no need to load it separately/again.
+
+ggpairs(
+  learning2014,
+  mapping = aes(col = gender, alpha = 0.3),
+  lower = list(combo = wrap("facethist", bins = 20))
+) +
+  scale_color_manual(values = c("red", "blue")) + # Assign new colors manually.
+  scale_fill_manual(values = c("red", "blue")) +
+  theme_bw() + # Change default theme to something more clean.
+  theme(strip.text = element_text(size = 14)) # Adjust panel title sizes.
+```
+
+   **Answer:** Something.
+
+### **Task 3.**
+***Choose three variables as explanatory variables and fit a regression model where exam points is the target (dependent, outcome) variable. Show a summary of the fitted model and comment and interpret the results. Explain and interpret the statistical test related to the model parameters. If an explanatory variable in your model does not have a statistically significant relationship with the target variable, remove the variable from the model and fit the model again without it.***
+
+**1) Fit linear model.**
+
+```{r}
+linear_model <- lm(points ~ attitude + gender + age, data = learning2014)
+```
+
+**2) Check summary of linear model.**
+```{r}
+summary(linear_model)
+```
+
+**3) Based on summary, remove gender and age due to not being statistically significant and repeat.**
+```{r}
+new_linear_model <- lm(points ~ attitude, data = learning2014)
+summary(new_linear_model)
+```
+
+   **Answer:** Something something.
+
+### **Task 4.**
+***Using a summary of your fitted model, explain the relationship between the chosen explanatory variables and the target variable (interpret the model parameters). Explain and interpret the multiple R-squared of the model.***  
+   **Answer:** Something something something.
+
+### **Task 5.**
+***Produce the following diagnostic plots: Residuals vs Fitted values, Normal QQ-plot and Residuals vs Leverage. Explain the assumptions of the model and interpret the validity of those assumptions based on the diagnostic plots.***
+
+**1) Generate requested plots.**
+```{r, fig.height = 6, fig.width = 6, fig.align = "center"}
+par(mfrow = c(2, 2),
+    mar = c(2, 2, 2, 2)) # Decrease margins around plots.
+plot(new_linear_model, which = c(1, 2, 5))
+```
+
+   **Answer:** Answers go here (eventually).

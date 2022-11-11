@@ -1,11 +1,13 @@
 ---
-title: "**IODS course project**"
+title: "**PHD-302 IODS course project 2022**"
 author: "Phuoc Truong Nguyen"
 output:
   html_document:
-    theme: cosmo
+    theme: readable
     toc: true
-    toc_depth: 2
+    toc_float: true
+    toc_collapsed: true
+    toc_depth: 3
     fig_caption: true
     fig_width: 6
     fig_height: 4
@@ -15,14 +17,14 @@ h1.title {
   font-size: 40px;
 }
 h4.author {
-  font-size: 25px;
+  font-size: 30px;
   color: DarkRed;
 }
 </style>
 
 ***
 
-# **Chapter 1 - Introduction to Open Data Science - Course Project**
+# **Chapter 1: Start me up!**
 
 ```{r child = "chapter1.Rmd"}
 # This will include Chapter 1 (that is updated in its own file) in the document.
