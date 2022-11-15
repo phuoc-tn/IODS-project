@@ -2,9 +2,7 @@
 
 ***Describe the work you have done this week and summarize your learning.***
 
-- Describe your work and results clearly. 
-- Assume the reader has an introductory course level understanding of writing and reading R code as well as statistical methods.
-- Assume the reader has no previous knowledge of your data or the more advanced methods you are using.
+> The main highlight for this week was that I learned how to do, (somewhat) understand, and interpret linear regression models and their results in R. I have more insight to identifying and validating variables and models to explain observed data. Let's hope that I will get a chance to utilize these in the future.
 
 ```{r}
 date()
