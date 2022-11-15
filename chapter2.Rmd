@@ -10,7 +10,7 @@
 date()
 ```
 
-## **Analysis**
+## **Analysis exercises**
 
 ### **Task 1.**
 ***Explore the structure and the dimensions of the data and describe the dataset briefly, assuming the reader has no previous knowledge of it.***
@@ -31,7 +31,7 @@ str(learning2014)
 dim(learning2014)
 ```
 
-   **Answer:** It's nice.
+> **Answer:** The data is based on a [statistical study](http://hdl.handle.net/10138/163015) about how students’ learning approaches and strategies relate to their achievements in learning statistics in an introductory course taught in the University of Helsinki, Finland.  It was sampled from the [original data set](http://www.helsinki.fi/~kvehkala/JYTmooc/JYTOPKYS3-data.txt) of the study, and consists of seven variables (gender, age, attitude, deep, stra, surf, and points) measured with 166 observations acquired from a questionnaire. The attitude variable (adjusted by dividing original attidute scores by ten) describes the attitude of students toward learning statistics measured with ten statements. The variables deep, stra, and surf are abbreviated from deep (aim to engage, learn, and understand course material), strategic (aim to maximize points via any approach), and surface (aim to pass with minimal effort) learning approaches, respectively, and were measured in a 1–5 scale (1 = disagree, 5 = agree).
 
 ### **Task 2.**
 ***Show a graphical overview of the data and show summaries of the variables in the data. Describe and interpret the outputs, commenting on the distributions of the variables and the relationships between them.***
@@ -39,10 +39,10 @@ dim(learning2014)
 **1.1) Use pairs() to visualize data.**
 ```{r, fig.height = 6, fig.width = 8, fig.align = "center"}
 pairs(learning2014[-1],
-      col = c("red", "blue")[factor(learning2014$gender)], # Use gender as group for colors.
+      col = c("red", "blue")[factor(learning2014$gender)], # Use gender for colors.
       oma = c(2, 2, 2, 10)) # Set the margins outside of plot.
 par(xpd = TRUE) # Allow legend to be outside of plot area.
-legend(0.95, 0.6, # Coordinates for legend.
+legend(0.95, 0.6, # Coordinates for legend position.
        legend = unique(learning2014$gender),
        fill = c("red", "blue"))
 ```
@@ -51,7 +51,8 @@ Getting colors and legend with pairs() was harder than expected. Maybe too hard.
 
 **1.2) Or use ggplot2 and GGally to visualize data.**
 ```{r, message = FALSE, fig.height = 7, fig.width = 9.5, fig.align = "center"}
-library(GGally) # ggplot2 is part of tidyverse, so no need to load it separately/again.
+library(tidyverse) # ggplot2 is part of tidyverse.
+library(GGally)
 
 ggpairs(
   learning2014,
@@ -59,20 +60,27 @@ ggpairs(
   lower = list(combo = wrap("facethist", bins = 20))
 ) +
   scale_color_manual(values = c("red", "blue")) + # Assign new colors manually.
-  scale_fill_manual(values = c("red", "blue")) +
+  scale_fill_manual(values = c("red", "blue")) + # Same here.
   theme_bw() + # Change default theme to something more clean.
   theme(strip.text = element_text(size = 14)) # Adjust panel title sizes.
 ```
 
-   **Answer:** Something.
+**2) Summarize data.**
+```{r}
+learning2014$gender <- as.factor(learning2014$gender) # Changed gender from character to factor for summary.
+summary(learning2014)
+```
+
+> **Answer:** The age of the students ranged from 17 to 55 with most being ca. 20 years old. Based on the results, this does not seem to correlate with the number of points acquired during the statistics course. Although participating female students (n = 110) outnumbered males (n = 55) by 2:1, there were minimal differences in points acquired between these two groups. The males however scored, on average, higher in attitude compared to females.  
+   A significant positive correlation was found between the attitude towards learning statistics and high points; indicating that the former is a good predictor for the latter. The individual learning approaches (deep, surface, and strategic) did not strongly correlate with points. However, among them the strategic approach seems to positively correlate the most with higher points which aligns with the general aim the approach — maximize the number of points with any approach. This approach was also slightly preferred more by females compared to males on average.
 
 ### **Task 3.**
 ***Choose three variables as explanatory variables and fit a regression model where exam points is the target (dependent, outcome) variable. Show a summary of the fitted model and comment and interpret the results. Explain and interpret the statistical test related to the model parameters. If an explanatory variable in your model does not have a statistically significant relationship with the target variable, remove the variable from the model and fit the model again without it.***
 
-**1) Fit linear model.**
+**1) Fit the learning approaches to linear model.**
 
 ```{r}
-linear_model <- lm(points ~ attitude + gender + age, data = learning2014)
+linear_model <- lm(points ~ deep + stra + surf, data = learning2014)
 ```
 
 **2) Check summary of linear model.**
@@ -80,26 +88,30 @@ linear_model <- lm(points ~ attitude + gender + age, data = learning2014)
 summary(linear_model)
 ```
 
-**3) Based on summary, remove gender and age due to not being statistically significant and repeat.**
+**3) Remove the approaches due to them not having a significant relationship with exam points, and redo the test as instructed.**
 ```{r}
-new_linear_model <- lm(points ~ attitude, data = learning2014)
+new_linear_model <- lm(points ~ 1, data = learning2014)
 summary(new_linear_model)
 ```
 
-   **Answer:** Something something.
+> **Answer:** In short, linear regression model tests the correlation between predicting variables, which are in my case the three learning approached (deep, strategic, and surface), and predicted outcomes, i.e. the exam points. At a cursory view of the summary table and the p-values in the Coefficients section, none of the three approaches are statistically significant; meaning that there is no correlation between them and the exam points.
 
 ### **Task 4.**
-***Using a summary of your fitted model, explain the relationship between the chosen explanatory variables and the target variable (interpret the model parameters). Explain and interpret the multiple R-squared of the model.***  
-   **Answer:** Something something something.
+***Using a summary of your fitted model, explain the relationship between the chosen explanatory variables and the target variable (interpret the model parameters). Explain and interpret the multiple R-squared of the model.***
+
+> **Answer:** The three learning approaches are not significant explanatory variables for the exam points. This can be seen, for example, in the previously mentioned Coefficients section, which shows the correlation and significance of the selected predictors (learning approaches in this case) and the exam points. The statistical significance of the predictors is shown with different symbols next to the p-values, and their corresponding values are shown immediately below (Signif. codes). The overall significance of the model — or the lack thereof — can also be seen in the F-statistic section.  
+   The estimates in the Coefficients section suggest (interestingly enough) that only the strategic approach positively correlates with higher exam points. This makes sense assuming students use deep and/or surfaces learning approaches depending on how familiar they are with certain topics in statistics in order to maximize points.  
+   The multiple R^2^ value shows how much the predicting variables explain the variance in the outcomes in our dataset. This means that the three approaches only explain ca. 4.1% of the variance. The adjusted R^2^ value, as name suggests, is scaled so that adding more variables does not result in higher R^2^ values. In this model, only 2.3% of the variance in exam points can be explained by the three approaches.
 
 ### **Task 5.**
 ***Produce the following diagnostic plots: Residuals vs Fitted values, Normal QQ-plot and Residuals vs Leverage. Explain the assumptions of the model and interpret the validity of those assumptions based on the diagnostic plots.***
 
-**1) Generate requested plots.**
+**1) Generate requested plots from the linear model with the three learning approaches.**
 ```{r, fig.height = 6, fig.width = 6, fig.align = "center"}
 par(mfrow = c(2, 2),
     mar = c(2, 2, 2, 2)) # Decrease margins around plots.
-plot(new_linear_model, which = c(1, 2, 5))
+plot(linear_model, which = c(1, 2, 5), lwd = 2) # lwd = line width.
 ```
 
-   **Answer:** Answers go here (eventually).
+> **Answer:** The Residuals vs Fitted plot shows the linearity of the fitted values and their residuals. Comparing the red line to the dashed grey line shows that the linearity between the values and residuals in my linear model is not the greatest. The Normal QQ-plot shows whether the values of the model follow a normal distribution. Looking at the plot, the data mostly follows a normal distribution apart from the tails. The Residuals vs Leverage plot shows which data points are "influential" meaning which points significantly affect the results of the linear model. Data points outside the Cook’s distance shown in grey dashed line(s) would be influential. Because no data points in this model are outside of the line, none of them are influential.
+

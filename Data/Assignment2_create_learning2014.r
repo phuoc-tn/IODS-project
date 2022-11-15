@@ -17,6 +17,7 @@ learning2014 <-
 str(learning2014)
 dim(learning2014)
 # Answer: Data frame has 183 observations of 60 variables, i.e. 183 rows and 60 columns.
+#         That's quite a big table.
 
 ################################# Task 3. #################################
 # Add new columns to data frame.
