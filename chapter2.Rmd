@@ -69,7 +69,7 @@ learning2014$gender <- as.factor(learning2014$gender) # Changed gender from char
 summary(learning2014)
 ```
 
-> **Answer:** The age of the students ranged from 17 to 55 with most being ca. 20 years old. Based on the results, this does not seem to correlate with the number of points acquired during the statistics course. Although participating female students (n = 110) outnumbered males (n = 55) by 2:1, there were minimal differences in points acquired between these two groups. The males however scored, on average, higher in attitude compared to females.  
+> **Answer:** The age of the students ranged from 17 to 55 with most being ca. 20 years old. Based on the results, this does not seem to correlate with the number of points acquired during the statistics course. Although participating female students (n = 110) outnumbered males (n = 56) by 2:1, there were minimal differences in points acquired between these two groups. The males however scored, on average, higher in attitude compared to females.  
    A significant positive correlation was found between the attitude towards learning statistics and high points; indicating that the former is a good predictor for the latter. The individual learning approaches (deep, surface, and strategic) did not strongly correlate with points. However, among them the strategic approach seems to positively correlate the most with higher points which aligns with the general aim the approach — maximize the number of points with any approach. This approach was also slightly preferred more by females compared to males on average.
 
 ### **Task 3.**
