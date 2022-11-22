@@ -712,8 +712,6 @@ loss_func <- function(class, prob) {
   mean(n_wrong)
 }
 
-alc %>% select(class, )
-
 # call loss_func to compute the average number of wrong predictions in the (training) data
 loss_func(class = alc$high_use, prob = alc$probability)
 # Answer: I assume that with prob = 0, 30% of not high_use case predictions are incorrect.

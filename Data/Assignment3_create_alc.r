@@ -1,7 +1,7 @@
 # Name: Phuoc Truong Nguyen
 # Date: 19 Nov 2022
 # Description: Data wrangling Rscript for Assignment 3.
-# Data source: https://archive.ics.uci.edu/ml/datasets/Student+Performance
+# Data source: http://www3.dsi.uminho.pt/pcortez/student.pdf
 
 #!/usr/bin/env Rscript
 

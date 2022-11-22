@@ -1,0 +1,263 @@
+# **Chapter 3: Logistic regression**
+
+```{r}
+date()
+```
+
+## **Analysis exercises**
+
+### **Task 2.**
+
+The CSV file for this week's assignment contains modified data from a study done by Prof. Paulo Cortez and Alice Silva, and which was published in 2008 ([source](http://www3.dsi.uminho.pt/pcortez/student.pdf)). The table has measurements (obtained via school reports and questionnaires) of variables related to the students' performances in mathematics and Portuguese from secondary education in two Portuguese schools (Gabriel Pereira and Mousinho da Silveira). The following attributes are found in the dataset:
+
+```{r, message = FALSE}
+library(tidyverse)
+
+student_alc <- read_csv(file = "https://raw.githubusercontent.com/KimmoVehkalahti/Helsinki-Open-Data-Science/master/datasets/alc.csv", col_names = TRUE)
+colnames(student_alc)
+```
+
+The "high_use" is an added variable, and can be either TRUE or FALSE depending on whether "alc_use" is higher than two or not.
+
+### **Task 3.**
+
+Due to the file containing so many interesting variables to choose from, I decided to let R — and fate — choose the ones I will be using for the rest of the exercises. These were:
+
+```{r}
+set.seed(2135) # Seed number for reproducibility, when using random sampling. 
+
+interesting_variables <- sample(colnames(student_alc), size = 4, replace = FALSE)
+interesting_variables
+```
+
+The **Free time** after school could have connections to high alcohol usage as the more time you have after school, especially if you're a student between 15 to 22 years old, the more time you have for a drink (or two). **Sex** might have also connections because men typically drink more that women. **Travel time**, which is specified to be from home to school, is a bit harder to imagine to be related to high alcohol consumption. Maybe Portuguese students drink during long trips to school? Who knows. ¯\\\_(ツ)\_/¯ Lastly, the **parent's cohabitation status** (together or apart) might have negative correlation due to children in two-parent households having both parents to look after them, thus having less opportunities or reasons to drink.
+
+### **Task 4.**
+
+```{r, message = FALSE, fig.align = "center"}
+library(RColorBrewer)
+library(patchwork)
+library(gridExtra)
+
+interesting_variables <- append(interesting_variables, "high_use")
+
+student_alc %>%
+  select(all_of(interesting_variables)) %>% gather() %>%
+ggplot(aes(value, fill = value)) +
+  geom_bar() +
+  scale_fill_brewer(palette = "Paired", guide = "none") +
+  theme_bw() +
+  theme(strip.text = element_text(size = 11, face = "bold"),
+        axis.title = element_text(size = 11, face = "bold")) +
+  facet_wrap("key", scales = "free")
+```
+
+Looking at the bar plots for the interesting variables, I notice that observations for free time are almost normally distributed. Most of the student don't have high alcohol usage. Interestingly, there is quite a skew with the parent's cohabitation status with most being together. The sex distribution is almost equal, and most students have a short travel time to school.
+
+```{r, fig.align = "center"}
+library(ggpubr)
+
+new_student_alc <- student_alc %>%
+  select(all_of(interesting_variables))
+
+plot_a <-
+  ggplot(new_student_alc, aes(x = high_use, y = freetime, fill = sex)) +
+  geom_boxplot() +
+  scale_fill_brewer(
+    palette = "Dark2",
+    name = "Sex",
+    labels = c("Female", "Male")
+  ) +
+  scale_y_discrete(limits = c("very low", "low", "medium", "high", "very high")) +
+  ylab("Free time\n(after school)") +
+  theme_bw() +
+  theme(
+    axis.title.x = element_blank(),
+    axis.title = element_text(face = "bold"),
+    legend.title = element_text(face = "bold")
+  )
+
+plot_b <-
+  ggplot(new_student_alc, aes(x = high_use, y = traveltime, fill = sex)) +
+  geom_boxplot() +
+  scale_fill_brewer(
+    palette = "Dark2",
+    name = "Sex",
+    labels = c("Female", "Male")
+  ) +
+  scale_y_discrete(limits = c("<15 min", "15–30 min", "30–60 min", ">60 min")) +
+  ylab("Travel time\n(home to school)") +
+  theme_bw() +
+  theme(
+    axis.title.x = element_blank(),
+    axis.title = element_text(face = "bold"),
+    legend.title = element_text(face = "bold")
+  )
+
+plot_c <-
+  ggplot(new_student_alc, aes(x = high_use, y = freetime, fill = Pstatus)) +
+  geom_boxplot() +
+  scale_fill_brewer(
+    palette = "Paired",
+    name = "Parent's\ncohabitation\nstatus",
+    labels = c("Apart", "Together")
+  ) +
+  scale_y_discrete(limits = c("very low", "low", "medium", "high", "very high")) +
+  ylab("Free time\n(after school)") +
+  theme_bw() +
+  theme(
+    axis.title.x = element_blank(),
+    axis.title = element_text(face = "bold"),
+    legend.title = element_text(face = "bold")
+  )
+
+plot_d <-
+  ggplot(new_student_alc, aes(x = high_use, y = traveltime, fill = Pstatus)) +
+  geom_boxplot() +
+  scale_fill_brewer(
+    palette = "Paired",
+    name = "Parent's\ncohabitation\nstatus",
+    labels = c("Apart", "Together")
+  ) +
+  scale_y_discrete(limits = c("<15 min", "15–30 min", "30–60 min", ">60 min")) +
+  ylab("Travel time\n(home to school)") +
+  theme_bw() +
+  theme(
+    axis.title.x = element_blank(),
+    axis.title = element_text(face = "bold"),
+    legend.title = element_text(face = "bold")
+  )
+
+joined_plot <- (plot_a + plot_b + plot_layout(guides = "collect")) /
+  (plot_c + plot_d + plot_layout(guides = "collect")) +
+  plot_annotation(tag_levels = "A") &
+  theme(plot.tag = element_text(face = "bold"))
+
+grid.arrange(
+  patchworkGrob(joined_plot),
+  bottom = text_grob("High alcohol consumption", face = "bold")
+)
+```
+Looking at the box plots, there doesn't seem to be much difference in alcohol consumption with travel time among the sexes nor the parent's cohabitation status (panels B and D). However with free time (panels A and C), there seems to be small increase with more free time. This somewhat aligns with my assumptions. The increase seems to be also higher on average with males (panel A), which aligns with my initial hypotheses. Curiously, in notice that students with separated parents have on average less free time, but also higher alcohol consumption. This contradicts my hypotheses.
+
+### **Task 5.**
+
+```{r}
+model <- glm(high_use ~ freetime + sex + traveltime + Pstatus - 1, data = student_alc, family = "binomial")
+summary(model)
+```
+
+The summary shows that Pstatus might not statistically significant in my model.
+
+```{r}
+OR <- coef(model) %>% exp
+CI <- confint(model) %>% exp
+cbind(OR, CI)
+```
+
+Pstatus has the widest confidence interval. The lower interval is below 1 and upper higher than 1, meaning there's no statistically significant association with high alcohol usage. This seems to contradict previous results. Free and travel time has statistically significant positive association (upper and lower intervals >1), which aligns with my assumptions. Meanwhile sex has negative (upper and lower intervals <1), which contradicts my assumptions.
+
+```{r}
+library(finalfit)
+
+factor_student_alc <-
+  new_student_alc %>%
+  mutate(sex = factor(sex) %>%
+           fct_recode("Female" = "F",
+                      "Male"   = "M") %>%
+           ff_label("Sex")) %>%
+  mutate(
+    Pstatus = factor(Pstatus) %>%
+      fct_recode("Apart" = "A",
+                 "Together"   = "T") %>%
+      ff_label("Parent's cohabitation status")
+  ) %>%
+  mutate(
+    traveltime = factor(traveltime) %>%
+      fct_recode(
+        "<15 min" = "1",
+        "15–30 min" = "2",
+        "30–60 min" = "3",
+        ">60 min" = "4"
+      ) %>%
+      ff_label("Travel time (home to school)")
+  ) %>%
+  mutate(
+    freetime = factor(freetime) %>%
+      fct_recode(
+        "very low" = "1",
+        "low" = "2",
+        "medium" = "3",
+        "high" = "4",
+        "very high"   = "5"
+      ) %>%
+      ff_label("Free time (after school)")
+  ) %>%
+  mutate(high_use = ff_label(high_use, "High alcohol consumption"))
+
+factor_student_alc %>%
+  summary_factorlist(
+    "high_use",
+    c("freetime", "sex", "traveltime", "Pstatus"),
+    p = TRUE,
+    add_dependent_label = TRUE
+  )
+```
+
+Using summary_factorlist() from the finalfit package reveals the same.
+
+```{r}
+factor_student_alc %>%
+  finalfit("high_use",
+           c("sex", "Pstatus", "traveltime", "freetime"),
+           metrics = TRUE)
+```
+
+```{r, fig.align = "center", message = FALSE, warning = FALSE, fig.width = 10}
+factor_student_alc %>%
+  or_plot(
+    "high_use",
+    c("sex", "Pstatus", "traveltime", "freetime"),
+    title_text_size = 13,
+    table_text_size = 4,
+    column_space = c(-3, 3.2, 7.5),
+    breaks = c(0.5, 1, 2.5, 5, 10, 25, 50)
+  )
+```
+
+### **Task 6.**
+
+Based on the previous model results, I will exclude Pstatus from further analyses.
+
+```{r}
+model <- glm(high_use ~ sex + freetime + traveltime - 1, data = factor_student_alc, family = "binomial")
+probabilities <- predict(model, type = "response")
+factor_student_alc <- mutate(factor_student_alc, probability = probabilities) %>% 
+  mutate(factor_student_alc, prediction = probability > 0.5)
+table(high_use = factor_student_alc$high_use, prediction = factor_student_alc$prediction)
+
+```
+
+```{r}
+table(high_use = factor_student_alc$high_use,
+      prediction = factor_student_alc$prediction) %>% prop.table() %>% addmargins()
+```
+
+```{r}
+ggplot(factor_student_alc,
+       aes(x = probability, y = high_use, col = prediction)) +
+  geom_point() +
+  theme_bw()
+```
+
+```{r}
+loss_func <- function(class, prob) {
+  n_wrong <- abs(class - prob) > 0.5
+  mean(n_wrong)
+}
+
+loss_func(class = factor_student_alc$high_use, prob = factor_student_alc$probability)
+
+```
+
+According to the results of cross validation, it seems that 28.1% of the average number of predictions in my final model are wrong, which probably isn't that great.
