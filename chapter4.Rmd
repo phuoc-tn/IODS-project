@@ -1,0 +1,203 @@
+# **Chapter 4: Clustering and classification**
+
+```{r}
+date()
+```
+
+## **Analysis exercises**
+
+### **Task 2.**
+
+> The data set, titled "Boston", used in this exercise contains 14 variables (columns) and 506 observations (rows). It entails information about housing values used to evaluate the willingness of people to pay for cleaner air in the Boston metropolitan area in the 1970s ([source](https://doi.org/10.1016/0095-0696\(78\)90006-2)).
+
+```{r, message=FALSE}
+library(MASS)
+data("Boston")
+
+str(Boston)
+dim(Boston)
+```
+
+### **Task 3.**
+
+> Looking at the plots and summary table, it looks like most variables are not equally distributed, such as crim, zn, and rad. Also many of the variables have strong correlations (both positive and negative) with each other based on the plots. The weakest correlating variable seems to be chas, i.e. the Charles River dummy variable. This might be due to it being a binary variable (0 or 1). Interestingly, indus, i.e. the proportion of non-retail business acres per town, and tax, i.e. full-value property-tax rate per 10 000 $, are bimodally distributed.
+
+```{r, message=FALSE, fig.align='center', fig.height=8, fig.width=10}
+library(GGally)
+
+ggpairs(Boston, lower = list(
+  continuous = wrap(
+    "smooth",
+    alpha = 0.3,
+    size = 0.5,
+    color = "firebrick1"
+  )
+)) + theme_bw()
+```
+
+```{r, fig.align='center', message=FALSE}
+library(tidyverse)
+library(corrplot)
+
+cor_matrix <- cor(Boston) %>% round(digits = 2)
+
+corrplot(
+  cor_matrix,
+  method = "circle",
+  type = "lower",
+  cl.pos = "b",
+  tl.pos = "d",
+  tl.cex = 0.6
+)
+```
+
+```{r}
+summary(Boston)
+```
+
+### **Task 4.**
+
+> The original Boston data set had variables measured in different ways and scales/magnitudes. After using scale(), all variables and observations have been normalized to the same scale. This allows for better comparison between them.
+
+```{r}
+boston_scaled <- Boston %>% scale()
+
+summary(boston_scaled)
+```
+
+```{r}
+boston_scaled_df <- as.data.frame(boston_scaled)
+bins <- quantile(boston_scaled_df$crim)
+
+crime <-
+  cut(
+    boston_scaled_df$crim,
+    breaks = bins,
+    include.lowest = TRUE
+  )
+
+boston_scaled_df <- boston_scaled_df %>% dplyr::select(-crim)
+boston_scaled_df <- data.frame(boston_scaled_df, crime)
+
+levels(boston_scaled_df$crime) <- c("low", "med_low", "med_high", "high")
+
+n <- nrow(boston_scaled_df)
+
+set.seed(2126)
+ind <- sample(n,  size = n * 0.8)
+
+train <- boston_scaled_df[ind,]
+test <- boston_scaled_df[-ind,]
+```
+
+### **Task 5.**
+
+```{r, fig.align='center', fig.height=8, fig.width=8}
+lda.fit <- lda(crime ~ ., data = train)
+
+lda.arrows <-
+  function(x,
+           myscale = 1,
+           arrow_heads = 0.1,
+           color = "black",
+           tex = 0.75,
+           choices = c(1, 2)) {
+    heads <- coef(x)
+    arrows(
+      x0 = 0,
+      y0 = 0,
+      x1 = myscale * heads[, choices[1]],
+      y1 = myscale * heads[, choices[2]],
+      col = color,
+      length = arrow_heads
+    )
+    text(
+      myscale * heads[, choices],
+      labels = row.names(heads),
+      cex = tex,
+      col = color,
+      pos = 3
+    )
+  }
+
+classes <- as.numeric(train$crime)
+
+plot(lda.fit,
+     dimen = 2,
+     col = c("red", "blue", "purple", "gold")[classes])
+lda.arrows(lda.fit, myscale = 2)
+```
+
+### **Task 6.**
+
+> The table shows that the majority of the predicted results of our model overall are correct (74 out of 102, 72.55%). Looking at the table in more detail, the model predicted correctly 16 out of 25 (64.0%) low crime rates, 16 out of 28 (57.14%) medium low crime rates, 12 out of 18 (66.67%) medium high crime rates, and 30 out of 31 (96.77%) high crime rates. This shows that the model is highly accurate in predicting high crime rates, however is somewhat inaccurate with lower crime rates, especially with medium low ones.
+
+```{r}
+correct_classes <- test$crime
+new_test <- test %>% dplyr::select(-crime)
+
+lda.pred <- predict(lda.fit, newdata = new_test)
+table(correct = correct_classes, predicted = lda.pred$class)
+```
+
+### **Task 7.**
+
+> As it was not specified which distances we were supposed to compute, might as well compute both Euclidian and Manhattan distances. For the initial k-means analysis, I randomly picked three clusters. But after determining the optimal number of clusters the re-analysis with the total of within cluster sum of squares, I ended up with two based on the line plot. That was due to the steepest drop being between one and two clusters. The scaling of the Boston dataset seems to do weird things to the distribution of the rad variable. I'm not sure why. Anyway, looking at the new distribution with k-means of two clusters, the indus, nox, and tax variable have two different colored peaks. This makes sense as I previously stated that these are bimodally distributed. I would assume that the scaled data has two centroids.
+
+```{r}
+data("Boston")
+
+new_boston_scaled <- as.data.frame(scale(Boston))
+dist_eu <- dist(new_boston_scaled)
+summary(dist_eu)
+
+dist_man <- dist(new_boston_scaled, method = "manhattan")
+summary(dist_man)
+```
+
+```{r, message=FALSE, warning=FALSE, fig.align='center', fig.height=8, fig.width=10}
+library(RColorBrewer)
+
+k_means <- kmeans(new_boston_scaled, centers = 3)
+
+ggpairs(
+  as.data.frame(new_boston_scaled),
+  aes(color = as.factor(k_means$cluster)),
+  lower = list(continuous = wrap(
+    "smooth",
+    alpha = 0.3,
+    size = 0.5
+  )),
+  upper = list(continuous = wrap("cor", size = 2))
+) +
+  scale_color_brewer(palette = "Dark2") +
+  scale_fill_brewer(palette = "Dark2") +
+  theme_bw()
+```
+
+```{r, fig.align='center', warning=FALSE}
+twcss <- sapply(1:10, function(k){kmeans(new_boston_scaled, k)$tot.withinss})
+
+qplot(x = 1:10, y = twcss, geom = "line") +
+  scale_x_continuous(breaks = c(1:10)) +
+  labs(x = "clusters") +
+  theme_bw()
+```
+
+```{r, message=FALSE, warning=FALSE, fig.align='center', fig.height=8, fig.width=10}
+new_k_means <- kmeans(new_boston_scaled, centers = 2)
+
+ggpairs(
+  new_boston_scaled,
+  aes(color = as.factor(new_k_means$cluster)),
+  lower = list(continuous = wrap(
+    "smooth",
+    alpha = 0.3,
+    size = 0.5
+  )),
+  upper = list(continuous = wrap("cor", size = 2))
+) +
+  scale_color_brewer(palette = "Dark2") +
+  scale_fill_brewer(palette = "Dark2") +
+  theme_bw()
+```
