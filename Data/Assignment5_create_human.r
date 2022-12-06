@@ -12,7 +12,7 @@ setwd("~/Desktop/GitHub/IODS-project/Data/")
 # Read CSV file.
 human_data <- read.csv("human.csv")
 
-# Mutate GNI too numeric.
+# Mutate GNI to numeric.
 library(tidyverse)
 
 human_data <- human_data %>% mutate(GNI = as.numeric(GNI))

@@ -1,0 +1,198 @@
+# **Chapter 5: Dimensionality reduction techniques**
+
+```{r}
+date()
+```
+
+## **Analysis exercises**
+
+### **Overview of the data**
+
+> At a glance, each variable seems to follow a (positive or negative) skewed normal distribution. Only Edu.Exp i.e, expected years of education, is nearly symmetrically distributed. Certain variables, such as gross national income (GNI), maternal mortality ratio (Mat.Mor), and adolescent birth rate (Ado.Birth), have a wide range between their minimum and maximum values as well as their means. This suggests an uneven and highly skewed distribution. Curiously, the highest GNI (123 124), which is also quite an outlier, belongs to Qatar. I wonder whether this has anything to do with its foreign aid/investment(s), oil and gas exports, and its currently hosted FIFA World Cup.  
+   The highest positive and statistically significant correlation is between expected years of education and life expectancy at birth (Life.Exp; 0.789), and conversely, the lowest is between (Mat.Mor) and life expectancy at birth (−0.857). The former makes sense as if you have a high life expectancy, you most likely live in a country in which you do not have to struggle to survive. Therefore, you can spend more time getting a degree. The latter also is sensible: if a mother dies at child birth, the child's survival decreases, especially in developing countries.
+
+```{r, message=FALSE, fig.align='center', fig.height=7, fig.width=9}
+library(tidyverse)
+library(GGally)
+
+human_data <-
+  read.csv("Data/new_human.csv",
+           header = T,
+           row.names = "X")
+
+custom_scatter_plots <-
+  function(data, mapping, method = "lm", ...) {
+    ggplot(data = data, mapping = mapping) +
+      geom_point(colour = "dodgerblue",
+                 alpha = 0.3,
+                 size = 1) +
+      geom_smooth(method = method,
+                  color = "blueviolet",
+                  linewidth = 0.5,
+                  ...)
+  }
+
+ggpairs(
+  human_data,
+  lower = list(continuous = wrap(custom_scatter_plots)),
+  upper = list(continuous = wrap("cor", size = 4, color = "black"))
+) +
+  theme_bw() +
+  theme(
+    strip.text = element_text(size = 11, color = "black", face = "bold"),
+    axis.text.x = element_text(
+      angle = 45,
+      hjust = 1,
+      vjust = 1
+    )
+  )
+```
+
+
+```{r}
+summary(human_data)
+```
+
+### **Principal component analysis (PCA)**
+
+> The results between standardized and non-standardized human data is quite different. The loads (indicated with red arrows) for the PCA results of the non-standardized human data reveals that the scales between the observations among the variables is really different. Looking at the data, gross national income (GNI), and maternal mortality ratio (Mat.Mor) are measured in the thousands, meanwhile the other variables are either ratios or measured — at most — in the hundreds. This results in them being the most contributing factors in the analysis, and thus creates the boomerang-shaped distribution in the non-standardized plot. The PCA dimensions also look odd as dimension 1 explains 99.99% of the variance in the data, while dimension 2 only 0.01%. Standardizing amends this as the variables are then comparable to each other on a same scale, which can be seen e.g., with the loads looking more reasonable (dimension 1 explains 53.6% and dimension 2 16.24% of the variance), and more circular distribution of data points.  
+   The clustering of countries in the PCA of standardized human data is interesting. Western nations (in Europe and North America) as well as Australia and New Zealand cluster towards female-to-male labor force participation rate (Labo.FM), female percent representation in parliament (Parli.F), expected years of education (Edu.Exp), GNI, female-to-male ratio with secondary education (Edu2.FM), and life expectancy at birth (Life.Exp). This is reasonable as these nations are known for stability, safety, and fulfilling human rights.  
+   Curiously many of the Caribbean and Latin american countries are clustering only to Parli.F and Labo.FM. This suggests that these countries have more/many females in parliamentary positions and in the work force, but also are not the wealthiest (based on the GNI load) nor the safest (based on e.g., Mat.Mor or Life.Exp). The high values in Parli.F and Labo.FM might be due to poor families sending all available/capable family members to work out of necessity.  
+   The Sub-Saharan, ca. half of the East Asian, and most of the South Asian countries cluster mainly due to Mat.Mor and Ado.Birth. Considering these countries are mostly poor developing countries with less-than-great track record with human rights, it is not surprising that females in these regions give more birth while young and die more during child birth most likely due to the former.  
+   Lastly, most of the countries in the Middle East and North Africa cluster towards Edu.Exp, GNI, Edu2.FM, and Life.Exp. High values in GNI are sensible due to, for example, oil and gas exports, whilst in the others the reasons are unclear (at least, for me at the moment of writing).
+
+```{r, warning=FALSE, fig.align='center', fig.height=6.5, fig.width=15, fig.cap = "**Principal component analysis (PCA) of standardized and non-standardized human data.** **In the left panel**, gross national income (GNI), and maternal mortality ratio (Mat.Mor) pull the data in two directions: Affluent oil-exporting countries, such as Qatar, United Arab Emerates, and United States, and banking countries, such as Luxemburg and Switzerland, cluster towards the former; whilst many of the Sub-Saharan African countries are pulled towards  the latter. Dimension 1 explains 99.99% of the variance, and dimension 2 explains 0.01%. **In the right panel**, there are overlapping region clusters pulled in three directions based on loads: countries in the Sub-Saharan Africa cluster towards Mat.Mor, adolescent birth rate (Ado.Birth), female percent representation in parliament (Parli.F), and female-to-male labour force participation rate (Labo.FM); several Latin American and Caribbean countries towards Labo.FM and Parli.F; European, North American, and Pacific countries towards Labo.FM, Parli.F, expected years of education (Edu.Exp), GNI, female-to-male ratio with secondary education (Edu2.FM), and life expectancy at birth (Life.Exp); and lastly, countries in South, East and Central Asia, Middle East, and North Africa towards Edu.Exp, GNI, Edu2.FM, and Life.Exp. Dimensions 1 and 2 explain 53.6% and 16.24% of the variance, respectively."}
+library(ggfortify)
+library(ggthemes)
+library(countrycode)
+library(patchwork)
+
+pca_human <- prcomp(human_data)
+new_human_data <-
+  human_data %>% mutate(Region = countryname(row.names(human_data), destination = "region"))
+
+pca1 <- autoplot(
+  pca_human,
+  data = new_human_data,
+  colour = "Region",
+  label = TRUE,
+  label.size = 4,
+  label.repel = TRUE,
+  loadings = TRUE,
+  loadings.label = TRUE,
+  loadings.label.size = 4,
+  loadings.label.repel = TRUE,
+) +
+  scale_color_manual(values = ptol_pal()(length(unique(
+    new_human_data$Region
+  ))),
+  guide = guide_legend(override.aes = list(size = 3))) +
+  geom_hline(yintercept = 0,
+             linetype = "dashed",
+             alpha = 0.4) +
+  geom_vline(xintercept = 0,
+             linetype = "dashed",
+             alpha = 0.4) +
+  ggtitle("Non-standardized human data") +
+  theme_bw()
+
+pca_human_scaled <- prcomp(scale(human_data))
+
+pca2 <- autoplot(
+  pca_human_scaled,
+  data = new_human_data,
+  colour = "Region",
+  label = TRUE,
+  label.size = 4,
+  label.repel = TRUE,
+  loadings = TRUE,
+  loadings.label = TRUE,
+  loadings.label.size = 4,
+  loadings.label.repel = TRUE
+) +
+  scale_color_manual(values = ptol_pal()(length(unique(
+    new_human_data$Region
+  ))),
+  guide = guide_legend(override.aes = list(size = 3))) +
+  geom_hline(yintercept = 0,
+             linetype = "dashed",
+             alpha = 0.4) +
+  geom_vline(xintercept = 0,
+             linetype = "dashed",
+             alpha = 0.4) +
+  ggtitle("Standardized human data") +
+  theme_bw()
+
+pca1 + pca2 + plot_layout(guides = "collect") &
+  theme(legend.text = element_text(color = "black", size = 10))
+```
+
+### **Multiple Correspondence Analysis (MCA)**
+
+> I decided on running the MCA on six random variables: escape.exoticism, where, dinner, Tea, resto, and pub. Looking at the Eigenvalues in the summary, Dim.1 and Dim.2 explain overall 19.761% and 14.687% of the variance, respectively. In the Categories section, the ctr column in Dim.1 shows five categories with highest contribution (crt > 12.0): chain store+tea shop, tea shop, green, resto, and pub.  
+   The plots show correlations between categories. For example, dinner and tea shop cluster near each other, suggesting strong correlation, which would make sense as people probably would drink tea during dinner at tea shops.
+
+```{r}
+# Load tea data.
+tea_data <-
+  read.csv(
+    "https://raw.githubusercontent.com/KimmoVehkalahti/Helsinki-Open-Data-Science/master/datasets/tea.csv",
+    stringsAsFactors = TRUE
+  )
+
+# Show data structure.
+str(tea_data)
+```
+
+```{r, fig.align='center', fig.height=12, fig.width=9}
+# Plot data.
+tea_data %>%
+  dplyr::select(-age) %>% # Removed age due to age_Q already existing as factor.
+  pivot_longer(cols = everything()) %>%
+  ggplot(aes(value, fill = name)) +
+  geom_bar() +
+  guides(fill = "none") +
+  theme_bw() +
+  theme(axis.text.x = element_text(
+    angle = 45,
+    hjust = 1,
+    size = 8
+  )) +
+  facet_wrap("name", scales = "free")
+```
+
+```{r}
+library(FactoMineR)
+
+# Pick randomly six variables.
+set.seed(2133)
+interesting_vars <- sample(colnames(tea_data), 6)
+new_tea_data <- tea_data %>% dplyr::select(all_of(interesting_vars))
+
+# Run MCA.
+mca_tea_data <- MCA(new_tea_data, graph = FALSE)
+# summary(mca_tea_data, nbelements = Inf) # nbelements = Inf prints whole summary with its 300 individuals.
+summary(mca_tea_data)
+```
+
+```{r, fig.align='center', fig.height=6, fig.width=12}
+par(mfrow = c(1, 2)) # Plot figures next to each other.
+
+plot.MCA(
+  mca_tea_data,
+  invisible = "ind",
+  graph.type = "classic",
+  habillage = "quali",
+  title = "MCA factor map"
+)
+
+plot.MCA(
+  mca_tea_data,
+  invisible = "ind",
+  graph.type = "classic",
+  habillage = "quali",
+  selectMod = "contrib 5",
+  # Show five categories that contribute the most (crt > 12.0).
+  title = "MCA factor map with most contributing categories"
+)
+```
