@@ -1,0 +1,378 @@
+# **Chapter 6: Analysis of longitudinal data**
+
+```{r}
+date()
+```
+
+## **Analysis exercises**
+
+### **Analyzing RATS data**
+
+> The prepared RATS data by [Martin J. Crowder and David J. Hand](https://doi.org/10.1201/9781315137421) measures the body weight of rats over a 64-day period (once a week). It consists of five variables and 176 observations each. The variables are ID (n = 16), Group (n = 3), WD (original **w**eight measuring **d**ay I left in the data just in case), Weight_g (g for grams), and Time (weight measuring day).
+
+```{r}
+# Import prepared RATS data.
+rats <- read.csv("Data/rats.csv")
+
+# Check data properties.
+str(rats)
+```
+
+> ID and Group variables should be treated as names/lables (factors) instead of values (integers), therefore these will be converted. Curiously, the summary table shows that there are twice the amount of observations for Group 1 (n = 88) compared to other two groups (n = 44).
+
+```{r, message=FALSE}
+# Convert ID and Group from integers (numbers) to factors.
+library(tidyverse)
+
+rats <-
+  rats %>% mutate(ID = as.factor(ID), Group = as.factor(Group))
+
+# Check summary.
+summary(rats)
+```
+
+> Checking the distribution of the weights via a density plot and a Q-Q plot reveals that it is not normally distributed and there are two distinct groups of rats (those below ca. 300 grams and others above ca. 400 grams).
+
+```{r, message=FALSE, warning=FALSE, fig.align='center', fig.height=4, fig.width=9}
+library(ggpubr)
+library(patchwork)
+
+density_plot <- ggdensity(rats$Weight_g)
+qqplot <- ggqqplot(rats$Weight_g)
+
+density_plot + qqplot
+```
+
+> Plotting the data both as is (raw) in panel a, and scaled (standardized)in panel b with line plots confirms this. We can also see that Group 3 has the lightest rats and Group 1 the heaviest. Group 2 in the middle but there is one outlier rat in that group.
+
+```{r, message=FALSE, fig.align='center', fig.height=4.5, fig.width=10}
+library(ggthemes)
+library(gridExtra)
+
+# Plot data as is.
+line_plot1 <- ggplot(rats, aes(
+  x = Time,
+  y = Weight_g,
+  group = ID,
+  color = Group
+)) +
+  geom_line(linewidth = 1) +
+  labs(y = "Weight (grams)") +
+  scale_color_manual(values = ptol_pal()(length(unique(rats$Group)))) +
+  theme_bw() +
+  theme(
+    axis.title = element_text(face = "bold"),
+    axis.text = element_text(size = 10),
+    axis.title.x = element_blank(),
+    legend.title = element_text(face = "bold"),
+    legend.text = element_text(size = 10)
+  )
+
+# Standardize data and plot again.
+rats_scaled <- rats %>% group_by(Time) %>%
+  mutate(Weight_scaled = scale(Weight_g)) %>%
+  ungroup()
+
+line_plot2 <- ggplot(rats_scaled,
+                     aes(
+                       x = Time,
+                       y = Weight_scaled,
+                       group = ID,
+                       color = Group
+                     )) +
+  geom_line(linewidth = 1) +
+  labs(y = "Weight in grams (Standardized)") +
+  scale_color_manual(values = ptol_pal()(length(unique(rats$Group)))) +
+  theme_bw() +
+  theme(
+    axis.title = element_text(face = "bold"),
+    axis.text = element_text(size = 10),
+    axis.title.x = element_blank(),
+    legend.title = element_text(face = "bold"),
+    legend.text = element_text(size = 10)
+  )
+
+# Join plots.
+joined_plot <- line_plot1 + line_plot2 +
+  plot_layout(guides = "collect") +
+  plot_annotation(tag_levels = "a", tag_suffix = ")") &
+  theme(
+    legend.text = element_text(color = "black", size = 10),
+    plot.tag = element_text(color = "black", face = "bold")
+  )
+
+grid.arrange(patchworkGrob(joined_plot),
+             bottom = text_grob("Day", face = "bold"))
+```
+
+> The data will be next summarized with a summary plot of means and standard errors. The relationship between the groups seems to stay the same even with Group 2 and its outlier (panel a). However, this results in a wider deviation and higher mean. Removing the outlier reduces the variation and lowers the mean weight (panel b).
+
+```{r, message=FALSE, fig.align='center', fig.height=4.5, fig.width=10}
+# Calculate mean weights and standard errors.
+rats_mean <- rats %>%
+  group_by(Group, Time) %>%
+  summarise(Weight_mean = mean(Weight_g),
+            Weight_se = sd(Weight_g) / sqrt(length((Weight_g)))) %>%
+  ungroup()
+
+# Plot mean of raw data.
+summary_plot1 <- ggplot(rats_mean,
+                        aes(x = Time,
+                            y = Weight_mean,
+                            color = Group)) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 3) +
+  geom_errorbar(
+    aes(ymin = Weight_mean - Weight_se,
+        ymax = Weight_mean + Weight_se),
+    width = 1.3,
+    linewidth = 0.7
+  ) +
+  scale_color_manual(values = ptol_pal()(length(unique(rats_mean$Group)))) +
+  labs(y = "Weight in grams (Mean +/- StdErr)") +
+  theme_bw() +
+  theme(
+    axis.title = element_text(face = "bold"),
+    axis.text = element_text(size = 10),
+    axis.title.x = element_blank(),
+    legend.title = element_text(face = "bold"),
+    legend.text = element_text(size = 10),
+  )
+
+# Remove outlier i.e., ID 12, and recalculate values.
+rats_mean_filtered <- rats %>% filter(ID != "12") %>%
+  group_by(Group, Time) %>%
+  summarise(Weight_mean = mean(Weight_g),
+            Weight_se = sd(Weight_g) / sqrt(length((Weight_g)))) %>%
+  ungroup()
+
+# Plot filtered data.
+summary_plot2 <- ggplot(rats_mean_filtered,
+       aes(x = Time,
+           y = Weight_mean,
+           color = Group)) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 3) +
+  geom_errorbar(
+    aes(ymin = Weight_mean - Weight_se,
+        ymax = Weight_mean + Weight_se),
+    width = 1.3,
+    linewidth = 0.7
+  ) +
+  scale_color_manual(values = ptol_pal()(length(unique(rats_mean$Group)))) +
+  theme_bw() +
+  theme(
+    axis.title = element_blank(),
+    legend.title = element_text(face = "bold"),
+    legend.text = element_text(size = 10),
+  )
+
+summary_plots <- summary_plot1 + summary_plot2 +
+  plot_layout(guides = "collect") +
+  plot_annotation(tag_levels = "a", tag_suffix = ")") &
+  theme(
+    legend.text = element_text(color = "black", size = 10),
+    plot.tag = element_text(color = "black", face = "bold")
+  )
+
+grid.arrange(patchworkGrob(summary_plots),
+             bottom = text_grob("Day", face = "bold"))
+```
+
+> Plotting the data with a box plot conversely shows that there are no outliers. Before plotting the data, I removed baseline measurements (day 1) in preparation for t-test and ANOVA later. While I could assume based on this that it is okay to run these tests on this data as is, I'll use the data without the outlier rat (ID 12).
+
+```{r, message=FALSE, fig.align='center'}
+# Filter out baseline weight i.e., weight on day 1.
+new_rats_mean <- rats_mean %>% filter(Time > 1)
+
+# Make box plot.
+ggplot(new_rats_mean,
+       aes(x = Group,
+           y = Weight_mean, fill = Group)) +
+  geom_boxplot(color = "black") +
+  stat_summary(
+    fun = "mean",
+    geom = "point",
+    shape = 23,
+    size = 3
+  ) +
+  scale_fill_manual(values = ptol_pal()(length(unique(rats_mean$Group))), guide = "none") +
+  labs(x = "Group", y = "Weight in grams (mean)") +
+  theme_bw() +
+  theme(
+    axis.title = element_text(face = "bold"),
+    legend.title = element_text(face = "bold"),
+    legend.text = element_text(size = 10),
+    axis.text = element_text(size = 10)
+  )
+```
+
+> The t-test, which was run to see whether there is a statistical difference in mean weights among the rat groups, resulted in the following table. Looking at the p-values, it is safe to assume that we can reject the null hypothesis (there is **no** statistical difference in mean weights among the rat groups). The plot already show as much but it is nice to have a quantitative/statistical measure confirming this.
+
+```{r, message=FALSE, results='asis'}
+library(rstatix)
+library(knitr)
+
+# Remove baseline (day 1) measurements.
+new_rats_mean_filtered <- rats_mean_filtered %>% filter(Time > 1)
+
+# Run t-test and output results to a table.
+kable(new_rats_mean_filtered %>% t_test(Weight_mean ~ Group))
+```
+
+> To run t-test and ANOVA, I created a new dataframe which has mean weights per ID. Based on previous plots and analyses, I'll filter out baseline measurements and ID 12 as an outlier. The fitted linear model of rats shows statistically positive correlation among inputted variables, and looks really good (maybe too good): the residuals seem to be equally distributed; p-values for coefficients are all statistically significant; and R^2^ values are >99%, meaning that over 99% of the variance in mean weights can be explained by our model. This is a suspiciously accurate model with near-perfect predictive power. The ANOVA in turn shows that the mean weights differ from the baseline, and among the groups with statistical significance. The p-value of F-statistic shows that the fitted model is overall statistically significant.
+
+```{r, message=FALSE}
+# Calculate mean weights per group.
+rats_group_mean <-
+  rats %>%
+  filter(Time > 1, ID != "12") %>%
+  group_by(Group, ID) %>%
+  summarize(Weight_mean = mean(Weight_g))
+
+# Create data frame of baseline weights.
+rats_baseline <-
+  rats %>%
+  dplyr::filter(Time == "1", ID != "12") %>%
+  group_by(Group, ID) %>%
+  summarize(Weight_mean_day1 = mean(Weight_g))
+
+# Join data frames.
+new_rats <- inner_join(rats_group_mean, rats_baseline)
+
+# Fit new data to a linear model and print summary.
+rats_fit <-
+  lm(Weight_mean ~ Weight_mean_day1 + Group, data = new_rats)
+
+summary(rats_fit)
+
+# Run ANOVA.
+anova(rats_fit)
+```
+
+> Lastly, I wanted (as something extra) to see what the actual/quantitative difference was among mean weights of the rat groups compared to the baseline weight. The difference was quite small, yet based on the previous tests, statistically significant.
+
+```{r, results='asis'}
+kable(
+  new_rats %>% group_by(Group) %>% summarize(
+    Weight_mean = mean(Weight_mean),
+    Weight_mean_day1 = mean(Weight_mean_day1),
+    Difference = round(Weight_mean - Weight_mean_day1, 2),
+    "Difference (%)" = round((1 - Weight_mean_day1 / Weight_mean) * 100, 2)
+  )
+)
+```
+
+---
+
+### **Analyzing BPRS data**
+
+> The data from Davis (2002) contains the measurements of brief psychiatric rating scale (BPRS) for males (n = 40) over a period of eight weeks (1–8). There is also a baseline (week 0). The scale is between one and seven (from "not present" to "extremely severe"), and is used to diagnose schizophrenia. For this part of the exercises, I'll use a prepared dataset, which has five variables (treatment, subject, week_og, bprs, and week) and 360 observations. The variable week_og is the original annotation for the measurement weeks. There's nothing interesting in the data summary at a quick glance (for me at least).
+
+```{r}
+# Import prepared BPRS data.
+bprs <-
+  read.csv("Data/bprs.csv") %>%
+  mutate(treatment = as.factor(treatment),
+         subject = as.factor(subject),
+         week = as.factor(week))
+
+# Check data properties.
+str(bprs)
+
+# Check summary of data.
+summary(bprs)
+```
+
+> Plotting the data shows a rough downward trend in the BPRS values. It also shows a lot of variance among the subjects.
+
+```{r, fig.align='center'}
+ggplot(bprs, aes(
+  x = week,
+  y = bprs,
+  group = interaction(subject, treatment),
+  color = treatment
+)) +
+  geom_line(linewidth = 1) +
+  labs(x = "Week", y = "Brief psychiatric rating scale (BPRS)", color = "Treatment") +
+  scale_color_manual(values = ptol_pal()(length(unique(bprs$treatment)))) +
+  theme_bw() +
+  theme(
+    axis.title = element_text(face = "bold"),
+    legend.title = element_text(face = "bold"),
+    legend.text = element_text(size = 10),
+    axis.text = element_text(size = 10)
+  )
+```
+
+> Fitting the variables into a linear model, it shows similar results. The estimates in the coefficients section are mostly negative supporting the negative association between BPRS and weeks, and these are mostly statistically significant with exception of week 1. Also treatment 2 is not statistically significant. The R^2^ values show that ca. 20% of the variance in BPRS is explained by the inputted variables, meaning that the fitted model is not that great. The concluding F-statistics show a statistically significant overall p-value for the fitted model.
+
+```{r}
+bprs_reg <- lm(bprs ~ week + treatment, bprs)
+
+summary(bprs_reg)
+```
+
+> Next, a linear mixed effect model with a random intercept model, in which we assume that the repeated observations (in this case, the measurements of BPRS) are not independent. The model seems to echo the negative correlation across weeks mentioned previously.
+
+```{r, message=FALSE}
+library(lme4)
+
+# Create random intercept model with subject for the random effect.
+bprs_ref <- lmer(bprs ~ week + treatment + (1 | subject), bprs, REML = FALSE)
+
+# Print summary of the model.
+summary(bprs_ref)
+
+```
+
+> Here, I do the same analysis as above but with the addition of a random slope, after which the this and the previous model will be analyzed with anova. The summary shows that the distribution of scaled residuals look quite even. The correlations look mostly negative. As for the anova results, they don't look good as the p-value is a (beautiful) 1. Thus, this model is not statistically significant.
+
+```{r, message=FALSE}
+# Create random intercept and random slope model with week and subject.
+bprs_ref1 <- lmer(bprs ~ week + treatment + (week | subject), bprs, REML = FALSE)
+
+# Print summary of the model.
+summary(bprs_ref1)
+
+# Run ANOVA on the models.
+anova(bprs_ref1, bprs_ref)
+```
+
+> For the final section, the BPRS data will be fitted with a random intercept and slope model and analyzed for the interaction between week and treatment group. Seemingly there is a negative covariance between treatment 2 and weeks 1–5, and a positive covariance between weeks 6–7. Running ANOVA with this and the previous model, it suggests that the mean do not differ with statistical difference (p-value of 0.3598). Plotting the fitted model shows again a general downward trend from baseline until week 5, after which the BPRS rises with treatment 2. The other treatment group has more varying covariance trends from week 5 onwards.
+
+```{r, message=FALSE, fig.align='center'}
+# Create random intercept and random slope model with the interaction.
+bprs_ref2 <- lmer(bprs ~ week + treatment + week * treatment + (week | subject), bprs, REML = FALSE)
+
+# Print summary of the model.
+summary(bprs_ref2)
+
+# Run ANOVA on the models.
+anova(bprs_ref2, bprs_ref1)
+
+# Create a vector of the fitted values.
+Fitted <- fitted(bprs_ref2)
+
+# Add fitted values to data frame.
+new_bprs <- bprs %>% mutate(fitted = Fitted)
+
+# Plot data.
+ggplot(new_bprs,
+       aes(
+         x = week,
+         y = fitted,
+         group = interaction(subject, treatment),
+         color = treatment
+       )) +
+  geom_line(linewidth = 1) +
+  labs(x = "Week", y = "Brief psychiatric rating scale (fitted)", color = "Treatment") +
+  scale_color_manual(values = ptol_pal()(length(unique(bprs$treatment)))) +
+  theme_bw() +
+  theme(
+    axis.title = element_text(face = "bold"),
+    legend.title = element_text(face = "bold"),
+    legend.text = element_text(size = 10),
+    axis.text = element_text(size = 10)
+  )
+```
